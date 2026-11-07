@@ -1,0 +1,23 @@
+# Binaries
+/terraform-provider-nebula
+terraform-provider-nebula_*
+*.exe
+dist/
+
+# Test and editor leftovers
+*.test
+*.out
+coverage.*
+.idea/
+.vscode/
+*.swp
+
+# Terraform/OpenTofu working files (never commit state: it holds private keys)
+.terraform/
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.*
+crash.log
+*.tfvars
+.terraformrc
+terraform.rc
