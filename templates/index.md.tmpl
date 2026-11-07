@@ -1,0 +1,30 @@
+---
+page_title: "nebula Provider"
+description: |-
+  Issue Nebula certificates with a CA key that never leaves OpenBao or Vault transit.
+---
+
+# nebula Provider
+
+{{ .Description | trimspace }}
+
+Certificates are built with Nebula's own `github.com/slackhq/nebula/cert` package. Every signature
+transit returns is checked against the pinned key version's public key before use.
+
+Only creating `nebula_ca` and `nebula_certificate` contacts OpenBao/Vault. Refresh, destroy,
+`nebula_keypair` and `nebula_ca_bundle` work offline.
+
+## Policy
+
+The token needs no more than this (per CA key):
+
+```hcl
+path "transit/keys/nebula-ca" { capabilities = ["read"] }
+path "transit/sign/nebula-ca" { capabilities = ["update"] }
+```
+
+## Example Usage
+
+{{ tffile "examples/provider/provider.tf" }}
+
+{{ .SchemaMarkdown | trimspace }}
