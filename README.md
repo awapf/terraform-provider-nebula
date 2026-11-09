@@ -214,6 +214,29 @@ takes three rounds, and every host must have applied a round before the next one
 
 The acceptance test `TestAccCABundle_rotation` walks through these rounds.
 
+## Go package `transitsign`
+
+The signing path is also importable as
+`github.com/awapf/terraform-provider-nebula/transitsign`, for services that
+issue Nebula certificates from a transit-held CA (for example an OIDC-backed
+signer):
+
+```go
+c, _ := transitsign.NewClient(transitsign.Config{Address: addr, Token: token})
+key, _ := c.Key(ctx, "nebula-ca", 1)
+ca, _ := transitsign.ParseCA(caPEM, key)
+pub, _ := transitsign.ParseHostPublicKey(hostPubPEM)
+crt, err := transitsign.IssueHost(ca, key, key.Signer(ctx), pub, transitsign.Spec{
+	Version: 2, Name: "laptop", Groups: []string{"people"},
+	Networks: []netip.Prefix{netip.MustParsePrefix("10.99.1.7/16")}, Duration: 12 * time.Hour,
+})
+```
+
+Every signature returned by transit is verified against the key's public half,
+and an issued certificate is verified against its CA (including the CA's group
+and network constraints) before it is returned. `transitsign/transittest`
+provides an in-memory fake transit for tests.
+
 ## Development
 
 Requirements: Go (see `go.mod`), and for acceptance tests the `bao` binary and `tofu` or `terraform`.
