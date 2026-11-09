@@ -39,63 +39,6 @@ func withNow(t *testing.T, now time.Time) {
 	t.Cleanup(func() { nowFunc = old })
 }
 
-func TestTransitKeyAndSign(t *testing.T) {
-	f := newFakeTransit(t)
-	f.addKey("ca")
-	k := mustKey(t, f, "ca", 1)
-	if len(k.PublicKey) != 32 || k.Latest != 1 {
-		t.Fatalf("unexpected key %+v", k)
-	}
-	sig, err := k.Signer(context.Background())([]byte("hello"))
-	if err != nil || len(sig) != 64 {
-		t.Fatalf("sign: %v (len %d)", err, len(sig))
-	}
-	if f.lastHeaders.Get("X-Vault-Token") != f.token {
-		t.Fatal("token header not sent")
-	}
-}
-
-func TestTransitMissingVersion(t *testing.T) {
-	f := newFakeTransit(t)
-	f.addKey("ca")
-	_, err := f.client(t).Key(context.Background(), "ca", 2)
-	if err == nil || !strings.Contains(err.Error(), "has no version 2") {
-		t.Fatalf("want missing version error, got %v", err)
-	}
-}
-
-func TestTransitRejectsBadSignature(t *testing.T) {
-	f := newFakeTransit(t)
-	f.addKey("ca")
-	k := mustKey(t, f, "ca", 1)
-	f.badSignature = true
-	_, err := k.Signer(context.Background())([]byte("hello"))
-	if err == nil || !strings.Contains(err.Error(), "does not verify") {
-		t.Fatalf("want verification error, got %v", err)
-	}
-}
-
-func TestTransitErrorsAndNamespace(t *testing.T) {
-	f := newFakeTransit(t)
-	f.addKey("ca")
-	c, err := newTransitClient(transitConfig{Address: f.srv.URL, Token: "wrong", Namespace: "team-a"})
-	if err != nil {
-		t.Fatal(err)
-	}
-	_, err = c.Key(context.Background(), "ca", 1)
-	if err == nil || !strings.Contains(err.Error(), "403") || !strings.Contains(err.Error(), "permission denied") {
-		t.Fatalf("want 403 permission denied, got %v", err)
-	}
-	if f.lastHeaders.Get("X-Vault-Namespace") != "team-a" {
-		t.Fatal("namespace header not sent")
-	}
-	for _, cfg := range []transitConfig{{Token: "x"}, {Address: "http://x"}, {Address: "ftp://x", Token: "x"}} {
-		if _, err := newTransitClient(cfg); err == nil {
-			t.Errorf("newTransitClient(%+v) should fail", cfg)
-		}
-	}
-}
-
 func TestIssueCAAndHost(t *testing.T) {
 	for _, v := range []int64{1, 2} {
 		t.Run("v"+string(rune('0'+v)), func(t *testing.T) {

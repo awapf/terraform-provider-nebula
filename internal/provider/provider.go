@@ -13,9 +13,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+
+	"github.com/awapf/terraform-provider-nebula/transitsign"
 )
 
-const defaultTransitMount = "transit"
+const defaultTransitMount = transitsign.DefaultMount
 
 var _ provider.Provider = (*nebulaProvider)(nil)
 
