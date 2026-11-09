@@ -170,7 +170,7 @@ func TestParseCA(t *testing.T) {
 	if _, err := transitsign.ParseCA(string(caPEM)+string(caPEM), k1); err == nil || !strings.Contains(err.Error(), "exactly one") {
 		t.Fatalf("want bundle error, got %v", err)
 	}
-	host, err := transitsign.IssueHost(ca, k1, k1.Signer(ctx), hostPub(t), transitsign.Spec{Version: 2, Name: "n"})
+	host, err := transitsign.IssueHost(ca, k1, k1.Signer(ctx), hostPub(t), transitsign.Spec{Version: 2, Name: "n", Networks: []netip.Prefix{netip.MustParsePrefix("10.0.0.1/24")}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -188,6 +188,9 @@ func TestParseCA(t *testing.T) {
 	ep, _ := expired.MarshalPEM()
 	if _, err := transitsign.ParseCA(string(ep), k1); err == nil || !strings.Contains(err.Error(), "expired") {
 		t.Fatalf("want expiry error, got %v", err)
+	}
+	if _, err := transitsign.ParseCAAt(string(ep), k1, time.Now().Add(-47*time.Hour-30*time.Minute)); err != nil {
+		t.Fatalf("ParseCAAt inside the CA's lifetime: %v", err)
 	}
 }
 
@@ -309,7 +312,7 @@ func TestIssueHostRejectsKeyMismatch(t *testing.T) {
 		t.Fatal(err)
 	}
 	// Signing a host under CA "a" with key "b" must never yield a cert.
-	if _, err := transitsign.IssueHost(ca, b, b.Signer(ctx), hostPub(t), transitsign.Spec{Version: 2, Name: "n"}); err == nil {
+	if _, err := transitsign.IssueHost(ca, b, b.Signer(ctx), hostPub(t), transitsign.Spec{Version: 2, Name: "n", Networks: []netip.Prefix{netip.MustParsePrefix("10.0.0.1/24")}}); err == nil {
 		t.Fatal("want error when the signer key is not the CA key")
 	}
 }
